@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kharcha Tracker - Final Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        :root {
+            --primary-color: #5E5CE6; --secondary-color: #34C759; --background-color: #F2F2F7;
+            --card-bg-color: #ffffff; --text-color: #1C1C1E; --light-text-color: #8A8A8E;
+            --border-color: #E5E5EA; --danger-color: #FF3B30; --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --edit-color: #007AFF;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color); transition: background-color 0.5s ease; }
+        .container { width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 20px 100px 20px; }
+        h1, h2, h3, h4 { color: var(--text-color); }
+        h1 { font-size: 2.2rem; text-align: center; margin-bottom: 10px; }
+        .subtitle { text-align: center; color: var(--light-text-color); margin-bottom: 30px; }
+        .card { background-color: var(--card-bg-color); padding: 25px; border-radius: 20px; margin-top: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
+
+        body.group-view { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        body.group-view .page-header, body.group-view .subtitle { color: #fff; }
+        body.group-view .card { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); }
+        body.group-view .card h2, body.group-view .card h3 { color: #fff; }
+        body.group-view input { background: rgba(255, 255, 255, 0.8); color: #000; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        #group-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .group-card { position: relative; background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 20px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; animation: slideUp 0.5s ease-out forwards; opacity: 0; }
+        .group-card:hover { transform: translateY(-5px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); }
+        .group-card h3 { color: var(--primary-color) !important; margin-bottom: 10px; padding-right: 60px; }
+        .group-card-details { display: flex; justify-content: space-between; font-size: 0.9rem; color: #555 !important; }
+        .group-card-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 5px; }
+        .group-card-actions button { padding: 8px; background: rgba(230, 230, 230, 0.8); box-shadow: none; border-radius: 8px; }
+
+        button { background: linear-gradient(45deg, var(--primary-color), #7876FF); color: white; padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-family: 'Poppins', sans-serif; font-weight: 500; transition: all 0.3s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(94, 92, 230, 0.3); }
+        .btn-secondary { background: linear-gradient(45deg, #8A8A8E, #6c757d); }
+        .btn-danger { background: transparent; color: var(--danger-color); padding: 5px; border-radius: 50%; border: 1px solid var(--danger-color); }
+        .btn-edit { background: transparent; color: var(--edit-color); padding: 5px; border-radius: 50%; border: 1px solid var(--edit-color); margin-right: 5px;}
+        
+        .header-bar { display: flex; justify-content: space-between; align-items: center; position: relative; }
+        .summary-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin: 20px 0; }
+        .summary-card { background-color: var(--card-bg-color); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .summary-card h4 { margin: 0 0 8px 0; color: var(--light-text-color); font-weight: 500; font-size: 0.9rem; }
+        .summary-card p { margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--primary-color); }
+        .summary-card.total-expense p { color: var(--danger-color); }
+        .summary-card.remaining-balance p { color: var(--secondary-color); }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border-color); }
+        .person-paid-amount, .expense-date { font-size: 0.8rem; color: var(--light-text-color); }
+        
+        .fab { position: fixed; bottom: 90px; right: 30px; width: 60px; height: 60px; background-color: var(--primary-color); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); cursor: pointer; z-index: 1000; transition: transform 0.3s, opacity 0.3s; }
+        .fab.hidden { transform: scale(0); opacity: 0; }
+        
+        .tab-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background-color: var(--card-bg-color); display: flex; justify-content: space-around; align-items: center; box-shadow: 0 -5px 20px rgba(0,0,0,0.08); z-index: 1000; }
+        .tab-item { cursor: pointer; text-align: center; color: var(--light-text-color); transition: color 0.3s; flex: 1; padding: 5px 0; }
+        .tab-item.active { color: var(--primary-color); }
+        .tab-item svg { width: 24px; height: 24px; }
+        .tab-item p { font-size: 12px; margin-top: 4px; }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* <<< YEH TABDEELI KI GAI HAI */
+            z-index: 2000;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h3 { margin: 0; }
+        .close-btn { font-size: 28px; cursor: pointer; color: var(--light-text-color); line-height: 1; }
+        .form-field { margin-bottom: 15px; }
+        .form-field label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
+        .form-row { display: flex; gap: 10px; align-items: flex-end; }
+        .form-row .form-field { flex: 1; }
+        input, select { width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 16px; font-family: 'Poppins', sans-serif; background-color: #fff; }
+        
+        .sidenav { height: 100%; width: 0; position: fixed; z-index: 3000; top: 0; left: 0; background-color: var(--card-bg-color); overflow-x: hidden; transition: 0.3s; padding-top: 60px; box-shadow: 5px 0 15px rgba(0,0,0,0.1); }
+        .sidenav a { padding: 15px 15px 15px 32px; text-decoration: none; font-size: 1.1rem; color: var(--text-color); display: flex; align-items: center; gap: 15px; transition: 0.3s; border-right: 4px solid transparent; }
+        .sidenav a:hover { background-color: var(--background-color); border-right: 4px solid var(--primary-color); }
+        .sidenav .closebtn { position: absolute; top: 15px; right: 25px; font-size: 36px; margin-left: 50px; color: var(--light-text-color); }
+        .sidenav-header { padding: 0 32px 20px 32px; border-bottom: 1px solid var(--border-color); }
+        .hamburger-btn { font-size: 24px; cursor: pointer; background: none; border: none; padding: 10px; color: var(--text-color); box-shadow: none; }
+
+        .category-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background-color: var(--background-color); color: var(--light-text-color); font-weight: 500; display: inline-block; margin-top: 4px; }
+        .manage-list-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-radius: 10px; margin-bottom: 10px; background-color: var(--background-color); transition: background-color 0.2s; }
+        .manage-item-info { display: flex; align-items: center; gap: 12px; font-weight: 500; }
+        .manage-item-info svg { color: var(--primary-color); }
+
+        .member-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .member-card {
+            background-color: var(--card-bg-color);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .member-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .member-card.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.3);
+            font-weight: bold;
+        }
+        .member-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-color);
+        }
+        .member-card .balance-preview {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .report-section {
+            margin-top: 30px;
+        }
+        .report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .report-item:last-child {
+            border-bottom: none;
+        }
+        .view-pic-btn { 
+            cursor: pointer; 
+            font-size: 1.1rem; 
+            margin-left: 8px; 
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="group-view">
+
+<div class="container">
+    <div id="group-page" class="page active">
+        <h1 class="page-header">Kharcha Tracker</h1>
+        <p class="subtitle">Apne group ke kharchay manage karen, asani se.</p>
+        <div class="card">
+            <h2>Apne Groups</h2><div id="group-list"></div>
+            <h3 style="margin-top: 30px;">Naya Group Shamil Karen</h3>
+            <input type="text" id="new-group-name" placeholder="Group ka naam likhen" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:10px;">
+            <button onclick="saveGroup()" style="width:100%;">Save Group</button>
+        </div>
+        <div class="footer-credit">App Designed by Huzaifa_isra</div>
+    </div>
+
+    <div id="details-container" class="hidden">
+        <div id="mySidenav" class="sidenav">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+            <div class="sidenav-header"><h3>Menu</h3></div>
+            <a href="#" onclick="backToGroups()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.495v3.505A.5.5 0 0 0 10 15v-4.5a1.5 1.5 0 0 0-1.5-1.5h-1A1.5 1.5 0 0 0 6 10.5V15a.5.5 0 0 0 .5.5z"/><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5z"/></svg> Groups</a>
+        </div>
+        
+        <div id="dashboard-page" class="page">
+            <div class="header-bar"> <button class="hamburger-btn" onclick="openNav()">&#9776;</button> <h2 id="active-group-name"></h2> <button onclick="openModal('add-person-modal')">Add Person</button> </div>
+            <div class="summary-container"></div>
+            <div class="card"><h3>Persons Balance</h3><div class="table-responsive-wrapper"><table id="persons-table"></table></div></div>
+            <div class="card"><h3>Recent Kharchay</h3><div class="table-responsive-wrapper"><table id="expenses-table"></table></div></div>
+        </div>
+        <div id="stats-page" class="page">
+             <div class="header-bar"> <button class="hamburger-btn" onclick="openNav()">&#9776;</button> <h2 style="text-align:center; flex-grow:1;">Group Statistics 📊</h2> </div>
+            <div id="stats-summary-container"></div>
+            <div class="card"> <div id="report-content" style="margin-top:15px;"></div> </div>
+        </div>
+        <div id="members-page" class="page">
+             <div class="header-bar"> <button class="hamburger-btn" onclick="openNav()">&#9776;</button> <h2 style="text-align:center; flex-grow:1;">Member Statement 🧾</h2> </div>
+            <div class="card" id="person-stats-container"></div>
+        </div>
+        <div id="settings-page" class="page">
+             <div class="header-bar"> <button class="hamburger-btn" onclick="openNav()">&#9776;</button> <h2 style="text-align:center; flex-grow:1;">Settings ⚙️</h2> </div>
+            <div class="card"><h3>Manage Entries</h3><p class="subtitle">Yahan se aap kisi bhi entry ko edit ya delete kar sakte hain.</p><div id="manage-entries-container"></div></div>
+            <div class="card"><h3>Data Management</h3><p class="subtitle">Application ka tamam data delete karen.</p><button class="btn-danger" onclick="deleteAllData()">Delete All Data</button></div>
+        </div>
+        <div class="fab hidden" onclick="openModal('add-expense-modal')">+</div>
+        <div class="tab-bar"></div>
+    </div>
+</div>
+
+<div id="add-person-modal" class="modal hidden"></div>
+<div id="add-expense-modal" class="modal hidden"></div>
+<div id="person-report-modal" class="modal hidden"></div>
+<div id="view-image-modal" class="modal hidden">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal('view-image-modal')">&times;</span>
+        <img id="receipt-image" src="" style="width: 100%; margin-top: 20px;">
+    </div>
+</div>
+
+
+<script>
+    const { jsPDF } = window.jspdf;
+    let appData = {
+        groups: [],
+        activeGroup: null,
+        categories: ['🍔 Food & Drinks', '🛒 Shopping', '🚗 Transportation', '🏠 Housing', '🏍️ Vehicle', '🎉 Life & Entertainment']
+    };
+    const DB_NAME = 'kharchaTrackerFinal';
+    const TRASH_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm3 0l-.5 8.5a.5.5 0 1 0 .998.06l.5-8.5a.5.5 0 1 0-.998.06Zm2.5 0l-.5 8.5a.5.5 0 1 0 .998.06l.5-8.5a.5.5 0 1 0-.998.06Z"/></svg>`;
+    const EDIT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg>`;
+    const PERSON_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg>`;
+    const EXPENSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 3.5a.5.5 0 0 1 .5-.5h11.5a.5.5 0 0 1 0 1h-12a.5.5 0 0 1-.5-.5v-1zM3 8a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6A.5.5 0 0 1 3 8zm10.293 2.293a1 1 0 0 1 1.414 0l.707.707a1 1 0 0 1 0 1.414l-.707.707a1 1 0 0 1-1.414 0l-.707-.707a1 1 0 0 1 0-1.414l.707-.707z"/></svg>`;
+    const IMAGE_ICON = ` <span class="view-pic-btn" onclick="openImageModal(EXPENSE_ID)">📷</span>`;
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedData = localStorage.getItem(DB_NAME);
+        if (savedData) {
+            const parsedData = JSON.parse(savedData);
+            appData = { ...appData, ...parsedData };
+            if (!appData.categories) { appData.categories = ['🍔 Food & Drinks', '🛒 Shopping', '🚗 Transportation', '🏠 Housing', '🏍️ Vehicle', '🎉 Life & Entertainment']; }
+        }
+        
+        document.querySelector('.tab-bar').innerHTML = `<div class="tab-item active" onclick="showPage('dashboard-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 15a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H13V2.5A1.5 1.5 0 0 0 11.5 1h-10A1.5 1.5 0 0 0 0 2.5V15h1.5zM1 2.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5V15H1V2.5zM12 12H2v2h10v-2z"/></svg><p>Dashboard</p></div><div class="tab-item" onclick="showPage('stats-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-4 0v-3H2v3h2z"/></svg><p>Stats</p></div><div class="tab-item" onclick="showPage('members-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm-3 4.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z"/><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM15 12.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg><p>Members</p></div><div class="tab-item" onclick="showPage('settings-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705-1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg><p>Settings</p></div>`;
+        document.getElementById('add-person-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="person-modal-title">Naya Person</h3><span class="close-btn" onclick="closeModal('add-person-modal')">&times;</span></div><input type="hidden" id="person-id"><div class="form-field"><label for="person-name">Naam</label><input type="text" id="person-name"></div><button class="btn-secondary" style="width:100%; margin-bottom:15px;" onclick="importContact()">Contacts se Import Karen</button><div class="form-field"><label for="person-paid">Paise Diye</label><input type="number" id="person-paid"></div><div class="form-field"><label for="person-whatsapp">WhatsApp</label><input type="tel" id="person-whatsapp"></div><button id="save-person-btn" onclick="handleSavePerson()">Save Person</button></div>`;
+        document.getElementById('add-expense-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="expense-modal-title">Naya Kharcha</h3><span class="close-btn" onclick="closeModal('add-expense-modal')">&times;</span></div><input type="hidden" id="expense-id"><div class="form-field"><label for="expense-desc">Tafseel</label><input type="text" id="expense-desc"></div><div class="form-field"><label for="expense-amount">Raqam</label><input type="number" id="expense-amount"></div><div class="form-field"><label for="expense-category">Category</label><select id="expense-category" onchange="handleCategoryChange(this)"></select></div><div class="form-row"><div class="form-field"><label for="expense-date">Date</label><input type="date" id="expense-date"></div><div class="form-field"><label for="expense-time">Time</label><input type="time" id="expense-time"></div></div><div class="form-field"><label for="expense-pic">Receipt</label><input type="file" id="expense-pic" accept="image/*"></div><button id="save-expense-btn" onclick="handleSaveExpense()">Save Kharcha</button></div>`;
+        
+        if (appData.activeGroup && appData.groups.find(g => g.name === appData.activeGroup)) {
+            selectGroup(appData.activeGroup);
+        } else {
+            appData.activeGroup = null;
+            renderGroups();
+        }
+    });
+
+    function saveData() { localStorage.setItem(DB_NAME, JSON.stringify(appData)); }
+    function selectGroup(groupName) { appData.activeGroup = groupName; saveData(); document.body.classList.remove('group-view'); document.getElementById('group-page').classList.remove('active'); document.getElementById('details-container').classList.remove('hidden'); showPage('dashboard-page'); }
+    function backToGroups() { appData.activeGroup = null; saveData(); document.body.classList.add('group-view'); document.getElementById('group-page').classList.add('active'); document.getElementById('details-container').classList.add('hidden'); closeNav(); renderGroups(); }
+    function showPage(pageId) { document.querySelectorAll('#details-container .page').forEach(p => p.classList.remove('active')); document.getElementById(pageId).classList.add('active'); document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active')); document.querySelector(`.tab-item[onclick*="'${pageId}'"]`)?.classList.add('active'); const fab = document.querySelector('.fab'); if(pageId === 'dashboard-page') fab.classList.remove('hidden'); else fab.classList.add('hidden'); if(appData.activeGroup) renderAll(); }
+    function openNav() { document.getElementById("mySidenav").style.width = "250px"; }
+    function closeNav() { document.getElementById("mySidenav").style.width = "0"; }
+    
+    function openModal(modalId, id = null) { 
+        if(modalId === 'add-expense-modal') {
+            document.getElementById('expense-modal-title').textContent = id ? "Edit Kharcha" : "Naya Kharcha";
+            populateCategoryDropdown();
+            if (id) openEditExpenseModal(id);
+            else { const now = new Date(); document.getElementById('expense-date').valueAsDate = now; document.getElementById('expense-time').value = now.toTimeString().slice(0,5); ['expense-id', 'expense-desc', 'expense-amount', 'expense-pic'].forEach(elId => document.getElementById(elId).value = ''); document.getElementById('save-expense-btn').textContent = 'Save Kharcha'; }
+        }
+        if(modalId === 'add-person-modal') {
+            document.getElementById('person-modal-title').textContent = id ? "Edit Person" : "Naya Person";
+             if (id) openEditPersonModal(id);
+             else { ['person-id', 'person-name', 'person-paid', 'person-whatsapp'].forEach(elId => document.getElementById(elId).value = ''); document.getElementById('save-person-btn').textContent = 'Save Person'; }
+        }
+        document.getElementById(modalId).classList.remove('hidden'); 
+    }
+    
+    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    function saveGroup() { const name = document.getElementById('new-group-name').value.trim(); if (name) { appData.groups.push({ name, persons: [], expenses: [] }); saveData(); renderGroups(); document.getElementById('new-group-name').value = ''; } }
+    
+    function handleSavePerson() { const id = document.getElementById('person-id').value; if(id) updatePerson(parseInt(id)); else createPerson(); }
+    function createPerson() { const group = appData.groups.find(g => g.name === appData.activeGroup); const name = document.getElementById('person-name').value.trim(); const paid = parseFloat(document.getElementById('person-paid').value) || 0; if (name) { group.persons.push({ name, paid, whatsapp: document.getElementById('person-whatsapp').value.trim(), id: Date.now() }); saveData(); renderAll(); closeModal('add-person-modal'); } }
+    function updatePerson(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const person = group.persons.find(p => p.id === id); if(person) { person.name = document.getElementById('person-name').value.trim(); person.paid = parseFloat(document.getElementById('person-paid').value) || 0; person.whatsapp = document.getElementById('person-whatsapp').value.trim(); saveData(); renderAll(); closeModal('add-person-modal'); } }
+    
+    async function handleSaveExpense() { const id = document.getElementById('expense-id').value; if(id) await updateExpense(parseInt(id)); else await createExpense(); }
+    async function createExpense() { const group = appData.groups.find(g => g.name === appData.activeGroup); if (group.persons.length === 0) { alert("Pehle person add karen."); return; } const desc = document.getElementById('expense-desc').value.trim(); const amount = parseFloat(document.getElementById('expense-amount').value) || 0; const dateTime = `${document.getElementById('expense-date').value}T${document.getElementById('expense-time').value}`; const category = document.getElementById('expense-category').value; const splitAmong = group.persons.map(p => p.id); let picData = null; if (document.getElementById('expense-pic').files[0]) picData = await toBase64(document.getElementById('expense-pic').files[0]); if (desc && amount > 0) { group.expenses.push({ id: Date.now(), desc, amount, dateTime, picData, splitAmong, category }); saveData(); renderAll(); closeModal('add-expense-modal'); } }
+    async function updateExpense(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const expense = group.expenses.find(e => e.id === id); if(expense){ expense.desc = document.getElementById('expense-desc').value.trim(); expense.amount = parseFloat(document.getElementById('expense-amount').value) || 0; expense.dateTime = `${document.getElementById('expense-date').value}T${document.getElementById('expense-time').value}`; expense.category = document.getElementById('expense-category').value; if (document.getElementById('expense-pic').files[0]) expense.picData = await toBase64(document.getElementById('expense-pic').files[0]); saveData(); renderAll(); closeModal('add-expense-modal'); } }
+
+    function openEditPersonModal(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const person = group.persons.find(p => p.id === id); if(person) { document.getElementById('person-id').value = person.id; document.getElementById('person-name').value = person.name; document.getElementById('person-paid').value = person.paid; document.getElementById('person-whatsapp').value = person.whatsapp; document.getElementById('save-person-btn').textContent = "Update"; } }
+    function openEditExpenseModal(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const expense = group.expenses.find(e => e.id === id); if(expense){ populateCategoryDropdown(expense.category); document.getElementById('expense-id').value = expense.id; document.getElementById('expense-desc').value = expense.desc; document.getElementById('expense-amount').value = expense.amount; const [date, time] = (expense.dateTime || 'T').split('T'); document.getElementById('expense-date').value = date; document.getElementById('expense-time').value = time; document.getElementById('save-expense-btn').textContent = "Update"; } }
+    
+    function populateCategoryDropdown(selectedCategory = null) { const select = document.getElementById('expense-category'); select.innerHTML = ''; appData.categories.forEach(cat => { const option = document.createElement('option'); option.value = cat; option.textContent = cat; select.appendChild(option); }); const addNewOption = document.createElement('option'); addNewOption.value = 'add_new_category'; addNewOption.textContent = '+ Nayi Category Shamil Karen'; select.appendChild(addNewOption); if (selectedCategory) { select.value = selectedCategory; } }
+    function handleCategoryChange(selectElement) { if (selectElement.value === 'add_new_category') { const newCategory = prompt("Nayi category ka naam likhen:"); if (newCategory && newCategory.trim() !== '') { const trimmedCategory = newCategory.trim(); if (!appData.categories.includes(trimmedCategory)) { appData.categories.push(trimmedCategory); saveData(); populateCategoryDropdown(trimmedCategory); } else { alert('Yeh category pehle se mojood hai.'); selectElement.selectedIndex = 0; } } else { selectElement.selectedIndex = 0; } } }
+    
+    async function importContact() { if ('contacts' in navigator && 'select' in navigator.contacts) { try { const contact = await navigator.contacts.select(['name', 'tel'], { multiple: false }); if (contact.length > 0) { document.getElementById('person-name').value = contact[0].name[0] || ''; document.getElementById('person-whatsapp').value = contact[0].tel[0] || ''; } } catch (ex) { console.error("Contact import failed:", ex); } } else { alert('Aapka browser is feature ko support nahi karta.'); } }
+
+    function removePerson(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const idx = group.persons.findIndex(p=>p.id===id); if (idx > -1 && confirm(`'${group.persons[idx].name}' ko remove karna hai?`)) { group.persons.splice(idx, 1); saveData(); renderAll(); } }
+    function removeExpense(id) { const group = appData.groups.find(g => g.name === appData.activeGroup); const idx = group.expenses.findIndex(e=>e.id===id); if (idx > -1 && confirm(`'${group.expenses[idx].desc}' ko remove karna hai?`)) { group.expenses.splice(idx, 1); saveData(); renderAll(); } }
+    function deleteAllData() { if (confirm('Kya aap waqai is app ka tamam data delete karna chahte hain?')) { localStorage.removeItem(DB_NAME); appData = { groups: [], activeGroup: null, categories: ['🍔 Food & Drinks', '🛒 Shopping', '🚗 Transportation', '🏠 Housing', '🏍️ Vehicle', '🎉 Life & Entertainment'] }; backToGroups(); } }
+    
+    function editGroup(oldName, event) { event.stopPropagation(); const newName = prompt("Group ka naya naam likhen:", oldName); if (newName && newName.trim() !== '' && newName.trim() !== oldName) { const trimmedNewName = newName.trim(); if (appData.groups.find(g => g.name === trimmedNewName)) { alert('Is naam ka group pehle se mojood hai.'); return; } const group = appData.groups.find(g => g.name === oldName); if (group) { group.name = trimmedNewName; if (appData.activeGroup === oldName) appData.activeGroup = trimmedNewName; saveData(); renderGroups(); } } }
+    function deleteGroup(groupName, event) { event.stopPropagation(); if (confirm(`Kya aap waqai '${groupName}' group ko delete karna chahte hain?`)) { const groupIndex = appData.groups.findIndex(g => g.name === groupName); if (groupIndex > -1) { appData.groups.splice(groupIndex, 1); if (appData.activeGroup === groupName) appData.activeGroup = null; saveData(); renderGroups(); } } }
+
+    function renderAll() { const pageId = document.querySelector('#details-container .page.active')?.id; if(!pageId) return; if(pageId === 'dashboard-page') renderDashboardPage(); else if(pageId === 'stats-page') renderStatsPage(); else if(pageId === 'members-page') renderMembersPage(); else if(pageId === 'settings-page') renderSettingsPage(); }
+    
+    function calculateAllBalances(group) { const balances = new Map(); group.persons.forEach(p => balances.set(p.id, p.paid)); group.expenses.forEach(e => { if (e.splitAmong && e.splitAmong.length > 0) { const share = e.amount / e.splitAmong.length; e.splitAmong.forEach(pId => { if (balances.has(pId)) balances.set(pId, balances.get(pId) - share); }); } }); return balances; }
+    
+    function calculateRunningGroupBalances(group) {
+        const totalPaid = group.persons.reduce((s, p) => s + p.paid, 0);
+        const sortedExpenses = [...group.expenses].sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+        let runningExpenseTotal = 0;
+        const expensesWithBalance = sortedExpenses.map(expense => {
+            runningExpenseTotal += expense.amount;
+            const runningBalance = totalPaid - runningExpenseTotal;
+            return { ...expense, runningBalance };
+        });
+        return expensesWithBalance;
+    }
+
+    function renderDashboardPage() {
+        const group = appData.groups.find(g => g.name === appData.activeGroup); if (!group) return;
+        const totalPaid = group.persons.reduce((s, p) => s + p.paid, 0);
+        const totalExpense = group.expenses.reduce((s, e) => s + e.amount, 0);
+        document.getElementById('active-group-name').textContent = group.name;
+        document.querySelector('#dashboard-page .summary-container').innerHTML = `<div class="summary-card"><h4>Total Jama</h4><p>Rs ${totalPaid.toFixed(2)}</p></div><div class="summary-card total-expense"><h4>Total Kharcha</h4><p>Rs ${totalExpense.toFixed(2)}</p></div><div class="summary-card remaining-balance"><h4>Baqaya</h4><p>Rs ${(totalPaid - totalExpense).toFixed(2)}</p></div>`;
+        const balances = calculateAllBalances(group);
+        document.getElementById('persons-table').parentElement.innerHTML = '<table id="persons-table"><thead><tr><th>Naam</th><th>Balance</th></tr></thead><tbody>' + group.persons.map(p => { const balance = balances.get(p.id) || 0; return `<tr><td>${p.name} <div class="person-paid-amount">Diye: ${p.paid.toFixed(2)}</div></td><td style="color:${balance >= 0 ? 'var(--secondary-color)' : 'var(--danger-color)'}; font-weight:600;">${balance.toFixed(2)}</td></tr>`; }).join('') + '</tbody></table>';
+        
+        const expensesWithBalance = calculateRunningGroupBalances(group).reverse();
+        document.getElementById('expenses-table').parentElement.innerHTML = '<table id="expenses-table"><thead><tr><th>Tafseel</th><th>Raqam</th></tr></thead><tbody>' + expensesWithBalance.slice(0, 5).map(e => { 
+            const categoryBadge = e.category ? `<span class="category-badge">${e.category}</span>` : ''; 
+            const imageIcon = e.picData ? IMAGE_ICON.replace('EXPENSE_ID', e.id) : '';
+            return `<tr><td><div>${e.desc}${imageIcon}</div><div class="expense-date">${formatDateTime(e.dateTime)}</div></td><td><div>${e.amount.toFixed(2)}</div><div class="expense-date" style="color:var(--secondary-color); font-weight: 500;">Baqaya: ${e.runningBalance.toFixed(2)}</div>${categoryBadge}</td></tr>`; 
+        }).join('') + '</tbody></table>';
+    }
+
+    function renderStatsPage() {
+        const group = appData.groups.find(g => g.name === appData.activeGroup); if (!group) return;
+        const totalPaid = group.persons.reduce((s, p) => s + p.paid, 0);
+        const totalExpense = group.expenses.reduce((s, e) => s + e.amount, 0);
+        document.getElementById('stats-summary-container').innerHTML = `<div class="summary-container"><div class="summary-card"><h4>Total Jama</h4><p>Rs ${totalPaid.toFixed(2)}</p></div><div class="summary-card total-expense"><h4>Total Kharcha</h4><p>Rs ${totalExpense.toFixed(2)}</p></div><div class="summary-card remaining-balance"><h4>Baqaya</h4><p>Rs ${(totalPaid - totalExpense).toFixed(2)}</p></div></div>`;
+        const balances = calculateAllBalances(group);
+        let personsHtml = group.persons.map(p => { const finalBalance = balances.get(p.id) || 0; const totalShare = p.paid - finalBalance; const shareBtn = `<button onclick="generatePersonImage(${p.id})" style="padding: 5px 10px; font-size: 12px; margin-left: 10px;">Share</button>`; return `<tr><td data-label="Naam">${p.name}</td><td data-label="Kul Diye">${p.paid.toFixed(2)}</td><td data-label="Kul Kharcha">${totalShare.toFixed(2)}</td><td data-label="Balance" style="font-weight:600; color:${finalBalance >= 0 ? 'var(--secondary-color)' : 'var(--danger-color)'}">${finalBalance.toFixed(2)}</td><td data-label="Action">${shareBtn}</td></tr>`; }).join('');
+        
+        const expensesWithBalance = calculateRunningGroupBalances(group).reverse();
+        let expensesHtml = expensesWithBalance.map(e => { 
+            const categoryBadge = e.category ? `<span class="category-badge">${e.category}</span>` : ''; 
+            const imageIcon = e.picData ? IMAGE_ICON.replace('EXPENSE_ID', e.id) : '';
+            return `<div class="report-item"><div>${e.desc}${imageIcon} <div class="expense-date">${formatDateTime(e.dateTime)}</div> ${categoryBadge}</div><div style="text-align:right;">Rs ${e.amount.toFixed(2)}<div class="expense-date" style="color:var(--secondary-color); font-weight: 500;">Baqaya: ${e.runningBalance.toFixed(2)}</div></div></div>`; 
+        }).join('');
+
+        const expenseReportHeader = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <h3>Kharchon ki Tafseel</h3>
+                                        <button onclick="generateGroupExpensesImage()" style="padding: 5px 10px; font-size: 12px;">Share</button>
+                                     </div>`;
+        
+        const saveButtonHtml = `<button onclick="downloadPDF('report-content', 'Group-Stats-${group.name}')" style="margin-bottom: 20px;">Save as PDF</button>`;
+
+        document.getElementById('report-content').innerHTML = `${saveButtonHtml}<div class="report-section"><h3>Members ka Hisab</h3><div class="table-responsive-wrapper"><table class="responsive-table" style="font-size: 0.9rem;"><thead><tr><th>Naam</th><th>Kul Diye</th><th>Kul Kharcha</th><th>Balance</th><th>Action</th></tr></thead><tbody>${personsHtml}</tbody></table></div></div><div class="report-section">${expenseReportHeader}${expensesHtml}</div>`;
+    }
+
+    function renderMembersPage() {
+        const group = appData.groups.find(g => g.name === appData.activeGroup); if (!group) return;
+        const container = document.getElementById('person-stats-container');
+        const balances = calculateAllBalances(group);
+        let buttonsHtml = `<div class="member-selector-grid">`;
+        group.persons.forEach(p => { const balance = balances.get(p.id) || 0; buttonsHtml += `<div id="member-btn-${p.id}" class="member-card" onclick="renderPersonStatement(${p.id})"><h4>${p.name}</h4><p class="balance-preview" style="color: ${balance >= 0 ? 'var(--secondary-color)' : 'var(--danger-color)'}">${balance.toFixed(2)}</p></div>`; });
+        buttonsHtml += `</div><button id="member-btn-all" class="member-card" style="width:100%;" onclick="renderAllMembersStatement()">Tamam Members</button>`;
+        container.innerHTML = buttonsHtml + `<div id="member-statement-details"></div>`;
+    }
+    
+    function renderPersonStatement(personId, isCombined = false) {
+        if (!isCombined) { document.querySelectorAll('.member-selector-grid div, .member-card').forEach(b => b.classList.remove('active')); document.getElementById(`member-btn-${personId}`).classList.add('active'); }
+        const detailsContainer = document.getElementById('member-statement-details');
+        personId = parseInt(personId);
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        const person = group.persons.find(p => p.id === personId); if (!person) return '';
+        
+        let transactions = [];
+        group.expenses.forEach(e => { if ((e.splitAmong || []).includes(personId)) { const share = e.amount / e.splitAmong.length; transactions.push({ id: e.id, picData: e.picData, date: new Date(e.dateTime), desc: e.desc, totalExpense: e.amount, debit: share, category: e.category }); } });
+        transactions.sort((a,b) => new Date(a.date) - new Date(b.date));
+        let runningBalance = person.paid;
+        const transactionsWithBalance = transactions.map(t => { runningBalance -= t.debit; return { ...t, balance: runningBalance }; }).reverse(); 
+        let totalShare = transactions.reduce((sum, t) => sum + t.debit, 0);
+        let balance = person.paid - totalShare;
+
+        let statementHtml = `<div id="statement-for-${person.id}" style="margin-bottom: 30px;"><h3 style="text-align:center">${person.name} ka Statement</h3><div class="statement-summary"><div><h4>Kul Jama</h4><p style="color:var(--secondary-color)">${person.paid.toFixed(2)}</p></div><div><h4>Kul Kharcha</h4><p style="color:var(--danger-color)">${totalShare.toFixed(2)}</p></div><div><h4>Final Balance</h4><p style="color:${balance >= 0 ? 'var(--secondary-color)' : 'var(--danger-color)'}">${balance.toFixed(2)}</p></div></div><div class="table-responsive-wrapper"><table class="responsive-table"><thead><tr><th>Date/Time</th><th>Tafseel</th><th>Kul Kharcha</th><th>Aapka Hissa</th><th>Baqaya</th></tr></thead><tbody>`;
+        transactionsWithBalance.forEach(t => { 
+            const categoryBadge = t.category ? `<br><span class="category-badge">${t.category}</span>` : ''; 
+            const imageIcon = t.picData ? IMAGE_ICON.replace('EXPENSE_ID', t.id) : '';
+            statementHtml += `<tr><td data-label="Date/Time">${formatDateTime(t.date)}</td><td data-label="Tafseel">${t.desc}${imageIcon}${categoryBadge}</td><td data-label="Kul Kharcha">${t.totalExpense.toFixed(2)}</td><td data-label="Aapka Hissa" style="color:var(--danger-color)">-${t.debit.toFixed(2)}</td><td data-label="Baqaya" style="font-weight:600; color:${t.balance >= 0 ? 'var(--secondary-color)' : 'var(--danger-color)'}">${t.balance.toFixed(2)}</td></tr>`; 
+        });
+        statementHtml += `</tbody></table></div></div>`;
+        
+        const saveButtonHtml = `<button onclick="downloadPDF('statement-for-${person.id}', 'Statement-${person.name}')">Save as PDF</button>`;
+        if (!isCombined) { detailsContainer.innerHTML = saveButtonHtml + statementHtml; }
+        return statementHtml;
+    }
+
+    function renderAllMembersStatement() {
+        document.querySelectorAll('.member-selector-grid div, .member-card').forEach(b => b.classList.remove('active'));
+        document.getElementById(`member-btn-all`).classList.add('active');
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        let allStatementsHtml = '';
+        group.persons.forEach(p => { allStatementsHtml += renderPersonStatement(p.id, true); });
+        
+        const saveButtonHtml = `<button onclick="downloadPDF('all-statements-content', 'Tamam-Members-Statement-${group.name}')">Save as PDF</button>`;
+        document.getElementById('member-statement-details').innerHTML = `${saveButtonHtml}<div id="all-statements-content">${allStatementsHtml}</div>`;
+    }
+
+    function renderSettingsPage() {
+        const group = appData.groups.find(g => g.name === appData.activeGroup); if (!group) return;
+        let personsHtml = group.persons.map(p => `<li class="manage-list-item"><div class="manage-item-info">${PERSON_ICON} ${p.name}</div><div><button class="btn-edit" onclick="openModal('add-person-modal', ${p.id})">${EDIT_ICON}</button><button class="btn-danger" onclick="removePerson(${p.id})">${TRASH_ICON}</button></div></li>`).join('');
+        let expensesHtml = group.expenses.sort((a,b) => new Date(b.dateTime) - new Date(a.dateTime)).map(e => {
+            const imageIcon = e.picData ? IMAGE_ICON.replace('EXPENSE_ID', e.id) : '';
+            return `<li class="manage-list-item"><div class="manage-item-info">${EXPENSE_ICON} ${e.desc}${imageIcon}</div><div><button class="btn-edit" onclick="openModal('add-expense-modal', ${e.id})">${EDIT_ICON}</button><button class="btn-danger" onclick="removeExpense(${e.id})">${TRASH_ICON}</button></div></li>`
+        }).join('');
+        document.getElementById('manage-entries-container').innerHTML = `<h4>Persons</h4><ul class="manage-list">${personsHtml || '<li>-</li>'}</ul><h4 style="margin-top:20px;">Kharchay</h4><ul class="manage-list">${expensesHtml || '<li>-</li>'}</ul>`;
+    }
+
+    function formatDateTime(isoString) { if(!isoString) return '-'; return new Date(isoString).toLocaleString('en-US', { day: 'numeric', month: 'short', hour: '2-digit', minute:'2-digit', hour12: true }); }
+    const toBase64 = file => new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); });
+    
+    // Naya function, tasveer dekhne ke liye
+    function openImageModal(expenseId) {
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        const expense = group.expenses.find(e => e.id === expenseId);
+        if (expense && expense.picData) {
+            document.getElementById('receipt-image').src = expense.picData;
+            openModal('view-image-modal');
+        }
+    }
+
+    // Naya function, category se emoji hatane ke liye
+    const stripEmoji = (text) => {
+        if (!text) return '';
+        // Yeh regular expression aam emojis ko match karta hai
+        const emojiRegex = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+        return text.replace(emojiRegex, '').trim();
+    };
+
+
+    // ===== MODIFIED PDF FUNCTION =====
+    function downloadPDF(reportType, fileName = 'Report') {
+        const doc = new jsPDF();
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        if (!group) return;
+
+        let y = 15;
+        const margin = 15;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        
+        const addHeader = () => {
+            doc.setFontSize(18);
+            doc.text("Kharcha Tracker Report", pageWidth / 2, y, { align: 'center' });
+            y += 8;
+            doc.setFontSize(12);
+            doc.text(`Group: ${group.name}`, pageWidth / 2, y, { align: 'center' });
+            y += 6;
+            doc.setLineWidth(0.5);
+            doc.line(margin, y, pageWidth - margin, y);
+            y += 10;
+        };
+        
+        const addFooter = () => {
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            }
+        };
+
+        const generateSinglePersonStatement = (person, isFirst) => {
+            if (!isFirst) { doc.addPage(); y = 15; addHeader(); }
+            
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text(`${person.name} ka Statement`, pageWidth / 2, y, { align: 'center' });
+            doc.setFont(undefined, 'normal');
+            y += 10;
+
+            let transactions = [];
+            group.expenses.forEach(e => {
+                if ((e.splitAmong || []).includes(person.id)) {
+                    const share = e.amount / e.splitAmong.length;
+                    transactions.push({ date: new Date(e.dateTime), desc: e.desc, totalExpense: e.amount, debit: share, category: e.category || '-' });
+                }
+            });
+            transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            let runningBalance = person.paid;
+            const transactionsWithBalance = transactions.map(t => {
+                runningBalance -= t.debit;
+                return { ...t, balance: runningBalance };
+            });
+
+            const totalShare = transactions.reduce((sum, t) => sum + t.debit, 0);
+            const finalBalance = person.paid - totalShare;
+
+            doc.setFontSize(11);
+            doc.text(`Kul Jama: Rs ${person.paid.toFixed(2)}`, margin, y); y += 7;
+            doc.text(`Kul Kharcha: Rs ${totalShare.toFixed(2)}`, margin, y); y += 7;
+            doc.text(`Final Balance: Rs ${finalBalance.toFixed(2)}`, margin, y); y += 12;
+
+            const transHead = [['Date', 'Category', 'Tafseel', 'Kul Kharcha', 'Aapka Hissa', 'Baqaya']];
+            const transBody = transactionsWithBalance.map(t => [
+                formatDateTime(t.date),
+                stripEmoji(t.category), // Emoji hatane wala function
+                t.desc,
+                t.totalExpense.toFixed(2),
+                `-${t.debit.toFixed(2)}`,
+                t.balance.toFixed(2)
+            ]);
+            doc.autoTable({ head: transHead, body: transBody, startY: y, theme: 'grid' });
+            y = doc.autoTable.previous.finalY + 10;
+        };
+
+        addHeader();
+
+        if (reportType === 'report-content') {
+            const totalPaid = group.persons.reduce((s, p) => s + p.paid, 0);
+            const totalExpense = group.expenses.reduce((s, e) => s + e.amount, 0);
+            const finalBalance = totalPaid - totalExpense;
+
+            doc.setFontSize(14); doc.text("Group Summary", margin, y); y += 8;
+            doc.setFontSize(11);
+            doc.text(`Total Jama: Rs ${totalPaid.toFixed(2)}`, margin, y); y += 7;
+            doc.text(`Total Kharcha: Rs ${totalExpense.toFixed(2)}`, margin, y); y += 7;
+            doc.text(`Final Baqaya: Rs ${finalBalance.toFixed(2)}`, margin, y); y += 12;
+
+            doc.setFontSize(14); doc.text("Members ka Hisab", margin, y); y += 8;
+            const balances = calculateAllBalances(group);
+            const membersHead = [['Naam', 'Kul Diye', 'Kul Kharcha', 'Balance']];
+            const membersBody = group.persons.map(p => {
+                const balance = balances.get(p.id) || 0;
+                const share = p.paid - balance;
+                return [p.name, p.paid.toFixed(2), share.toFixed(2), balance.toFixed(2)];
+            });
+            doc.autoTable({ head: membersHead, body: membersBody, startY: y, theme: 'grid' });
+            y = doc.autoTable.previous.finalY + 10;
+
+            if (y > pageHeight - 40) { doc.addPage(); y = 15; addHeader(); }
+
+            doc.setFontSize(14); doc.text("Kharchon ki Tafseel", margin, y); y += 8;
+            const expensesWithBalance = calculateRunningGroupBalances(group);
+            const expensesHead = [['Date', 'Category', 'Tafseel', 'Raqam', 'Baqaya']];
+            const expensesBody = expensesWithBalance.map(e => [
+                formatDateTime(e.dateTime),
+                stripEmoji(e.category), // Emoji hatane wala function
+                e.desc,
+                e.amount.toFixed(2),
+                e.runningBalance.toFixed(2)
+            ]);
+            doc.autoTable({ head: expensesHead, body: expensesBody, startY: y, theme: 'grid' });
+
+        } else if (reportType.startsWith('statement-for-')) {
+            const personId = parseInt(reportType.split('-')[2]);
+            const person = group.persons.find(p => p.id === personId);
+            if (person) generateSinglePersonStatement(person, true);
+        
+        } else if (reportType === 'all-statements-content') {
+            group.persons.forEach((p, index) => {
+                generateSinglePersonStatement(p, index === 0);
+            });
+        }
+        
+        addFooter();
+        doc.save(`${fileName}.pdf`);
+    }
+    // ===== END OF MODIFIED PDF FUNCTION =====
+
+    function renderGroups() { const list = document.getElementById('group-list'); list.innerHTML = ''; if (appData.groups.length === 0) { list.innerHTML = `<p style="color:#fff; text-align:center;">Naya group shamil karen.</p>`; return; } appData.groups.forEach((g, index) => { const totalExpense = g.expenses.reduce((s, e) => s + e.amount, 0); const card = document.createElement('div'); card.className = 'group-card'; card.style.animationDelay = `${index * 100}ms`; card.onclick = () => selectGroup(g.name); card.innerHTML = `<div class="group-card-actions"><button class="btn-edit" onclick="editGroup('${g.name}', event)">${EDIT_ICON}</button><button class="btn-danger" onclick="deleteGroup('${g.name}', event)">${TRASH_ICON}</button></div><h3>${g.name}</h3><div class="group-card-details"><span>${g.persons.length} Members</span><span>Rs ${totalExpense.toFixed(0)}</span></div>`; list.appendChild(card); }); }
+    
+    async function generateGroupExpensesImage() {
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        if (!group) return;
+        const totalPaid = group.persons.reduce((s, p) => s + p.paid, 0);
+        const totalExpense = group.expenses.reduce((s, e) => s + e.amount, 0);
+        const finalBalance = totalPaid - totalExpense;
+        const expensesWithBalance = calculateRunningGroupBalances(group); 
+        const expensesHtml = expensesWithBalance.map(e => {
+            const categoryHtml = e.category ? `<div style="font-size:10px; color:#888;">${e.category}</div>` : '';
+            return `<div style="font-size:12px; border-bottom:1px solid #eee; padding: 5px 0;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>${e.desc} (${formatDateTime(e.dateTime)})</span>
+                            <strong style="white-space: nowrap;">Kul: ${e.amount.toFixed(2)}</strong>
+                        </div>
+                        <div style="text-align:right; font-weight:bold; color: #34C759; margin-top: 4px;">
+                            Baqaya: ${e.runningBalance.toFixed(2)}
+                        </div>
+                        ${categoryHtml}
+                    </div>`;
+        }).join('');
+        const reportHtml = `<div id="group-expenses-report-content" class="modal-content" style="max-width: 450px; font-family: 'Poppins', sans-serif;">
+                                <h3 style="text-align:center;">Kharchon ki Tafseel</h3>
+                                <p style="text-align:center; color:#888; font-size:14px;">Group: ${group.name}</p>
+                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                                <p><strong>Kul Jama:</strong> Rs ${totalPaid.toFixed(2)}</p>
+                                <p><strong>Kul Kharcha:</strong> Rs ${totalExpense.toFixed(2)}</p>
+                                <p style="font-size:18px; font-weight:bold; color:${finalBalance >= 0 ? 'green':'red'};">
+                                    <strong>Final Balance:</strong> Rs ${finalBalance.toFixed(2)}
+                                </p>
+                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                                ${expensesHtml}
+                                <p style="text-align:center; font-size:10px; color:#aaa; margin-top:15px;">Generated by Kharcha Tracker</p>
+                            </div>`;
+        document.body.insertAdjacentHTML('beforeend', reportHtml);
+        await new Promise(r => setTimeout(r, 100));
+        const content = document.getElementById('group-expenses-report-content');
+        html2canvas(content, { 
+            scale: 2,
+            height: content.scrollHeight,
+            width: content.scrollWidth,
+            windowHeight: content.scrollHeight,
+            windowWidth: content.scrollWidth
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `Kharchay-${group.name}.png`;
+            link.click();
+            content.remove();
+        });
+        alert('Group ke kharchon ki report image ban kar download ho gayi hai.');
+    }
+
+    async function generatePersonImage(personId) {
+        const group = appData.groups.find(g => g.name === appData.activeGroup);
+        const person = group.persons.find(p => p.id === personId);
+        if (!person) return;
+        const balances = calculateAllBalances(group);
+        const finalBalance = balances.get(person.id) || 0;
+        const totalShare = person.paid - finalBalance;
+        const personExpenses = group.expenses
+            .filter(e => (e.splitAmong || []).includes(person.id))
+            .sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+        let runningBalance = person.paid;
+        const expensesHtml = personExpenses.map(e => {
+            const share = e.amount / e.splitAmong.length;
+            runningBalance -= share;
+            const categoryHtml = e.category ? `<div style="font-size:10px; color:#888;">${e.category}</div>` : '';
+            return `<div style="font-size:12px; border-bottom:1px solid #eee; padding: 5px 0;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>${e.desc} (${formatDateTime(e.dateTime)})</span>
+                            <strong>Kul: ${e.amount.toFixed(2)}</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px;">
+                            <div style="font-weight:bold; font-size: 13px; color:${runningBalance >= 0 ? 'green' : 'red'};">Baqaya: ${runningBalance.toFixed(2)}</div>
+                            <div style="text-align:right; color:#FF3B30;">Aapka Hissa: -${share.toFixed(2)}</div>
+                        </div>
+                        ${categoryHtml}
+                    </div>`;
+        }).join('');
+        const reportHtml = `<div id="person-report-content" class="modal-content" style="max-width: 400px; font-family: 'Poppins', sans-serif;">
+                                <h3 style="text-align:center;">Hisab: ${person.name}</h3>
+                                <p style="text-align:center; color:#888; font-size:14px;">Group: ${group.name}</p>
+                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                                <p><strong>Aap ne Diye:</strong> Rs ${person.paid.toFixed(2)}</p>
+                                <p><strong>Aapka Kul Kharcha:</strong> Rs ${totalShare.toFixed(2)}</p>
+                                <p style="font-size:18px; font-weight:bold; color:${finalBalance >= 0 ? 'green':'red'};">
+                                    <strong>Final Balance:</strong> Rs ${finalBalance.toFixed(2)}
+                                </p>
+                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                                <h4>Aap in Kharchon mein shamil thay:</h4>
+                                ${expensesHtml}
+                                <p style="text-align:center; font-size:10px; color:#aaa; margin-top:15px;">Generated by Kharcha Tracker</p>
+                            </div>`;
+        document.body.insertAdjacentHTML('beforeend', reportHtml);
+        await new Promise(r => setTimeout(r, 100));
+        const content = document.getElementById('person-report-content');
+        html2canvas(content, { 
+            scale: 2,
+            height: content.scrollHeight,
+            width: content.scrollWidth,
+            windowHeight: content.scrollHeight,
+            windowWidth: content.scrollWidth
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `Report-${person.name}.png`;
+            link.click();
+            content.remove();
+        });
+        alert('Aapke member ki report image ban kar download ho gayi hai. Ab aap isay gallery se WhatsApp par share kar sakte hain.');
+    }
+</script>
+</body>
+</html>
