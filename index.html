@@ -3,12 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kharcha Tracker - Google Backup Version</title>
-    <!-- Google Identity Services Library -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <!-- Google API Client Library -->
-    <script src="https://apis.google.com/js/api.js" async defer></script>
-
+    <title>Kharcha Tracker - Final Version</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -47,29 +42,6 @@
         body.group-view .card { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); }
         body.group-view .card h2, body.group-view .card h3 { color: #fff; }
         body.group-view input { background: rgba(255, 255, 255, 0.8); color: #000; }
-        
-        #group-page-auth-container button {
-            width: 100%;
-            background: #fff;
-            color: #444;
-            box-shadow: 0 2px 4px 0 rgba(0,0,0,.25);
-            border: 1px solid #ddd;
-            font-weight: 600;
-        }
-        #group-page-auth-container button:hover {
-            background: #f8f8f8;
-        }
-        #group-page-auth-container button.disabled {
-            background: #eee;
-            cursor: not-allowed;
-            color: #999;
-        }
-        #group-page-auth-container svg {
-            width: 18px;
-            height: 18px;
-        }
-
-
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         #group-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .group-card { position: relative; background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 20px; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s; animation: slideUp 0.5s ease-out forwards; opacity: 0; }
@@ -128,7 +100,7 @@
         .sidenav .closebtn { position: absolute; top: 15px; right: 25px; font-size: 36px; margin-left: 50px; color: var(--light-text-color); }
         .sidenav-header { padding: 0 32px 20px 32px; border-bottom: 1px solid var(--border-color); }
         .hamburger-btn { font-size: 24px; cursor: pointer; background: none; border: none; padding: 10px; color: var(--text-color); box-shadow: none; }
-       
+
         .category-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background-color: var(--background-color); color: var(--light-text-color); font-weight: 500; display: inline-block; margin-top: 4px; }
         .member-selector-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
         .member-card {
@@ -172,11 +144,6 @@
             <h3 style="margin-top: 30px;">Naya Group Shamil Karen</h3>
             <input type="text" id="new-group-name" placeholder="Group ka naam likhen" style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:10px;">
             <button onclick="saveGroup()" style="width:100%;">Save Group</button>
-
-            <!-- LOGIN BUTTON CONTAINER -->
-            <div id="group-page-auth-container" style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 25px;">
-                <!-- Login button yahan dynamically add hoga -->
-            </div>
         </div>
         <div class="footer-credit">App Designed by Huzaifa_isra</div>
     </div>
@@ -185,14 +152,6 @@
         <div id="mySidenav" class="sidenav">
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
             <div class="sidenav-header"><h3>Menu</h3></div>
-            
-            <!-- GOOGLE AUTH SECTION START -->
-            <div id="sidenav-auth-status">
-                <!-- Login status yahan dynamically add hoga -->
-            </div>
-            <div id="sync-status" style="padding: 10px 32px; font-size: 0.8rem; color: var(--light-text-color);">Not Synced</div>
-            <!-- GOOGLE AUTH SECTION END -->
-
             <a href="#" onclick="backToGroups()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.495v3.505A.5.5 0 0 0 10 15v-4.5a1.5 1.5 0 0 0-1.5-1.5h-1A1.5 1.5 0 0 0 6 10.5V15a.5.5 0 0 0 .5.5z"/><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.707 1.5z"/></svg> Groups</a>
         </div>
         
@@ -233,22 +192,6 @@
 
 
 <script>
-    // --- GOOGLE DRIVE API CONFIGURATION ---
-    // APNI GOOGLE CLOUD CLIENT ID AUR API KEY YAHAAN DAALEIN
-    const CLIENT_ID = 'http://1018997820441-huvd1r1ic1stoouv9frfegomfcji9r03.apps.googleusercontent.com'; 
-    const API_KEY = 'AIzaSyAsWy4cZq74ek9eyQcnEyKaJXTj3YB7BCw';
-    
-    const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-    const SCOPES = 'https://www.googleapis.com/auth/drive.appdata';
-    const APP_FILE_NAME = 'kharchaTrackerData.json';
-
-    let tokenClient;
-    let gapiInited = false;
-    let driveFileId = null; // Data file ka ID store karne ke liye
-    let saveTimeout;
-    let isLoggedIn = false;
-    // --- END OF CONFIGURATION ---
-
     const { jsPDF } = window.jspdf;
     let appData = {
         groups: [],
@@ -267,19 +210,6 @@
 
 
     document.addEventListener('DOMContentLoaded', () => {
-        // Load local data first
-        loadLocalData();
-        applyTheme();
-        applyAccentColor();
-        
-        document.querySelector('.tab-bar').innerHTML = `<div class="tab-item active" onclick="showPage('dashboard-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 15a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H13V2.5A1.5 1.5 0 0 0 11.5 1h-10A1.5 1.5 0 0 0 0 2.5V15h1.5zM1 2.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5V15H1V2.5zM12 12H2v2h10v-2z"/></svg><p>Dashboard</p></div><div class="tab-item" onclick="showPage('stats-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-4 0v-3H2v3h2z"/></svg><p>Stats</p></div><div class="tab-item" onclick="showPage('members-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm-3 4.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z"/><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM15 12.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg><p>Members</p></div><div class="tab-item" onclick="showPage('settings-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705-1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg><p>Settings</p></div>`;
-        document.getElementById('add-person-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="person-modal-title">Naya Person</h3><span class="close-btn" onclick="closeModal('add-person-modal')">&times;</span></div><input type="hidden" id="person-id"><div class="form-field"><label for="person-name">Naam</label><input type="text" id="person-name"></div><button class="btn-secondary" style="width:100%; margin-bottom:15px;" onclick="importContact()">Contacts se Import Karen</button><div class="form-field"><label for="person-paid">Paise Diye</label><input type="number" id="person-paid"></div><div class="form-field"><label for="person-whatsapp">WhatsApp</label><input type="tel" id="person-whatsapp"></div><button id="save-person-btn" onclick="handleSavePerson()">Save Person</button></div>`;
-        document.getElementById('add-expense-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="expense-modal-title">Naya Kharcha</h3><span class="close-btn" onclick="closeModal('add-expense-modal')">&times;</span></div><input type="hidden" id="expense-id"><div class="form-field"><label for="expense-desc">Tafseel</label><input type="text" id="expense-desc"></div><div class="form-field"><label for="expense-amount">Raqam</label><input type="number" id="expense-amount"></div><div class="form-field"><label for="expense-category">Category</label><select id="expense-category" onchange="handleCategoryChange(this)"></select></div><div class="form-row"><div class="form-field"><label for="expense-date">Date</label><input type="date" id="expense-date"></div><div class="form-field"><label for="expense-time">Time</label><input type="time" id="expense-time"></div></div><div class="form-field"><label for="expense-pic">Receipt</label><input type="file" id="expense-pic" accept="image/*" onchange="previewImage(event)"><div id="image-preview-container" style="margin-top:10px; text-align:center;"></div></div><div class="form-field"><button type="button" class="btn-secondary" id="show-split-options-btn" onclick="showSplitOptions()" style="width:100%;">Split Kharcha</button><div id="split-options-container" class="hidden" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;"><label>Kin Logon mein Taqseem Karen?</label><div id="expense-split-members" class="member-selector-grid"></div><button type="button" class="btn-secondary" onclick="hideSplitOptions()" style="width:100%; margin-top:10px;">Cancel Split</button></div></div><button id="save-expense-btn" onclick="handleSaveExpense()">Save Kharcha</button></div>`;
-        
-        initializeUi();
-    });
-
-    function loadLocalData() {
         const savedData = localStorage.getItem(DB_NAME);
         if (savedData) {
             const parsedData = JSON.parse(savedData);
@@ -288,249 +218,22 @@
                 appData.settings = { theme: 'system', accentColor: '#5E5CE6', currency: 'Rs' };
             }
         }
-    }
-
-    function initializeUi() {
-         if (appData.activeGroup && appData.groups.find(g => g.name === appData.activeGroup)) {
+        applyTheme();
+        applyAccentColor();
+        
+        document.querySelector('.tab-bar').innerHTML = `<div class="tab-item active" onclick="showPage('dashboard-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M1.5 15a.5.5 0 0 0 0 1h13a.5.5 0 0 0 0-1H13V2.5A1.5 1.5 0 0 0 11.5 1h-10A1.5 1.5 0 0 0 0 2.5V15h1.5zM1 2.5a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 .5.5V15H1V2.5zM12 12H2v2h10v-2z"/></svg><p>Dashboard</p></div><div class="tab-item" onclick="showPage('stats-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-4 0v-3H2v3h2z"/></svg><p>Stats</p></div><div class="tab-item" onclick="showPage('members-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm-3 4.5a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11z"/><path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM15 12.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg><p>Members</p></div><div class="tab-item" onclick="showPage('settings-page')"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705-1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c-1.4-.413-1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg><p>Settings</p></div>`;
+        document.getElementById('add-person-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="person-modal-title">Naya Person</h3><span class="close-btn" onclick="closeModal('add-person-modal')">&times;</span></div><input type="hidden" id="person-id"><div class="form-field"><label for="person-name">Naam</label><input type="text" id="person-name"></div><button class="btn-secondary" style="width:100%; margin-bottom:15px;" onclick="importContact()">Contacts se Import Karen</button><div class="form-field"><label for="person-paid">Paise Diye</label><input type="number" id="person-paid"></div><div class="form-field"><label for="person-whatsapp">WhatsApp</label><input type="tel" id="person-whatsapp"></div><button id="save-person-btn" onclick="handleSavePerson()">Save Person</button></div>`;
+        document.getElementById('add-expense-modal').innerHTML = `<div class="modal-content"><div class="modal-header"><h3 id="expense-modal-title">Naya Kharcha</h3><span class="close-btn" onclick="closeModal('add-expense-modal')">&times;</span></div><input type="hidden" id="expense-id"><div class="form-field"><label for="expense-desc">Tafseel</label><input type="text" id="expense-desc"></div><div class="form-field"><label for="expense-amount">Raqam</label><input type="number" id="expense-amount"></div><div class="form-field"><label for="expense-category">Category</label><select id="expense-category" onchange="handleCategoryChange(this)"></select></div><div class="form-row"><div class="form-field"><label for="expense-date">Date</label><input type="date" id="expense-date"></div><div class="form-field"><label for="expense-time">Time</label><input type="time" id="expense-time"></div></div><div class="form-field"><label for="expense-pic">Receipt</label><input type="file" id="expense-pic" accept="image/*" onchange="previewImage(event)"><div id="image-preview-container" style="margin-top:10px; text-align:center;"></div></div><div class="form-field"><button type="button" class="btn-secondary" id="show-split-options-btn" onclick="showSplitOptions()" style="width:100%;">Split Kharcha</button><div id="split-options-container" class="hidden" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;"><label>Kin Logon mein Taqseem Karen?</label><div id="expense-split-members" class="member-selector-grid"></div><button type="button" class="btn-secondary" onclick="hideSplitOptions()" style="width:100%; margin-top:10px;">Cancel Split</button></div></div><button id="save-expense-btn" onclick="handleSaveExpense()">Save Kharcha</button></div>`;
+        
+        if (appData.activeGroup && appData.groups.find(g => g.name === appData.activeGroup)) {
             selectGroup(appData.activeGroup);
         } else {
             appData.activeGroup = null;
             renderGroups();
         }
-        updateAuthUI();
-    }
+    });
 
-    // --- GOOGLE AUTH FUNCTIONS ---
-    // GSI client load hone ke baad call hoga
-    window.onload = function() {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: handleTokenResponse,
-        });
-
-        // gapi client load hone ke baad call hoga
-        gapi.load('client', async () => {
-            await gapi.client.init({
-                apiKey: API_KEY,
-                discoveryDocs: DISCOVERY_DOCS,
-            });
-            gapiInited = true;
-            updateAuthUI(); // Update UI after GAPI is initialized
-        });
-    };
-
-    function handleAuthClick() {
-        if (!gapiInited) {
-            alert('Authentication is not ready yet. Please wait a moment.');
-            return;
-        }
-        if (gapi.client.getToken() === null) {
-            tokenClient.requestAccessToken({ prompt: 'consent' });
-        }
-    }
-
-    function handleSignoutClick() {
-        const token = gapi.client.getToken();
-        if (token !== null) {
-            google.accounts.oauth2.revoke(token.access_token, () => {
-                gapi.client.setToken('');
-                isLoggedIn = false;
-                driveFileId = null;
-                updateAuthUI();
-                document.getElementById('sync-status').textContent = 'Logged Out.';
-            });
-        }
-    }
-
-    function handleTokenResponse(tokenResponse) {
-        if (tokenResponse && tokenResponse.access_token) {
-            gapi.client.setToken(tokenResponse);
-            isLoggedIn = true;
-            updateAuthUI();
-            loadDataFromDrive();
-        } else {
-            console.error('Login failed');
-            updateAuthUI();
-        }
-    }
-    
-    function updateAuthUI() {
-        const groupPageAuthContainer = document.getElementById('group-page-auth-container');
-        const sidenavAuthStatus = document.getElementById('sidenav-auth-status');
-        const googleIconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-google" viewBox="0 0 16 16"><path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.25C2.806 7.66 2.5 8.5 2.5 9.5s.306 1.84.814 2.584C3.96 13.592 5.877 15 8 15c1.13 0 2.13-.372 2.94-1.007a4.417 4.417 0 0 0 1.482-3.231H8v-2h7.545z"/></svg>`;
-
-        // Check if GAPI client is ready. If not, show authenticating state.
-        if (!gapiInited || !gapi.client) {
-            isLoggedIn = false;
-            if (groupPageAuthContainer) {
-                groupPageAuthContainer.innerHTML = `
-                    <button class="disabled" disabled>
-                        ${googleIconSvg}
-                        <span>Authenticating...</span>
-                    </button>
-                `;
-            }
-            if (sidenavAuthStatus) {
-                sidenavAuthStatus.innerHTML = `
-                    <div style="padding: 15px 32px; color: var(--light-text-color); font-size: 0.9rem;">
-                        Status: Not Logged In
-                    </div>
-                `;
-            }
-            return;
-        }
-
-        const isSignedIn = gapi.client.getToken() !== null;
-
-        if (isSignedIn) {
-            isLoggedIn = true;
-            if (groupPageAuthContainer) {
-                groupPageAuthContainer.innerHTML = '';
-            }
-            gapi.client.request({
-                path: 'https://www.googleapis.com/oauth2/v3/userinfo'
-            }).then((response) => {
-                const profile = response.result;
-                if (sidenavAuthStatus) {
-                    sidenavAuthStatus.innerHTML = `
-                        <div style="padding: 15px 15px 15px 32px; border-bottom: 1px solid var(--border-color);">
-                            <p style="font-weight: bold; margin-bottom: 5px;">${profile.name}</p>
-                            <p style="font-size: 0.8rem; color: var(--light-text-color);">${profile.email}</p>
-                        </div>
-                        <a href="#" onclick="handleSignoutClick()">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0v2z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3z"/></svg>
-                            <span>Logout</span>
-                        </a>
-                    `;
-                }
-            });
-        } else {
-            isLoggedIn = false;
-            if (groupPageAuthContainer) {
-                groupPageAuthContainer.innerHTML = `
-                    <button onclick="handleAuthClick()">
-                        ${googleIconSvg}
-                        <span>Login with Google</span>
-                    </button>
-                `;
-            }
-            if (sidenavAuthStatus) {
-                sidenavAuthStatus.innerHTML = `
-                    <div style="padding: 15px 32px; color: var(--light-text-color); font-size: 0.9rem;">
-                        Status: Not Logged In
-                    </div>
-                `;
-            }
-        }
-    }
-
-
-    async function loadDataFromDrive() {
-        try {
-            document.getElementById('sync-status').textContent = 'Syncing...';
-            const response = await gapi.client.drive.files.list({
-                spaces: 'appDataFolder',
-                fields: 'files(id, name)',
-                q: `name='${APP_FILE_NAME}'`
-            });
-
-            if (response.result.files.length > 0) {
-                // File found, download it
-                driveFileId = response.result.files[0].id;
-                const fileContentResponse = await gapi.client.drive.files.get({
-                    fileId: driveFileId,
-                    alt: 'media'
-                });
-                
-                const cloudData = JSON.parse(fileContentResponse.body);
-                // Simple merge: cloud data overwrites local
-                appData = cloudData;
-                localStorage.setItem(DB_NAME, JSON.stringify(appData)); // Update local storage too
-                initializeUi(); // Re-render the whole UI with new data
-                document.getElementById('sync-status').textContent = 'Synced with Google Drive.';
-                
-            } else {
-                // No file found, upload local data if it exists
-                document.getElementById('sync-status').textContent = 'No cloud data. Uploading local...';
-                await saveDataToDrive();
-            }
-        } catch (error) {
-            console.error('Error loading data from Drive:', error);
-            document.getElementById('sync-status').textContent = 'Sync Error. Using local data.';
-        }
-    }
-
-    async function saveDataToDrive() {
-        if (!isLoggedIn) return;
-        document.getElementById('sync-status').textContent = 'Saving to Drive...';
-        const fileMetadata = {
-            'name': APP_FILE_NAME,
-            'mimeType': 'application/json'
-        };
-
-        const media = {
-            mimeType: 'application/json',
-            body: JSON.stringify(appData)
-        };
-
-        try {
-            let request;
-            if (driveFileId) {
-                // Update existing file
-                request = gapi.client.request({
-                    path: `/upload/drive/v3/files/${driveFileId}`,
-                    method: 'PATCH',
-                    params: { uploadType: 'media' },
-                    body: media.body
-                });
-            } else {
-                // Create new file
-                fileMetadata.parents = ['appDataFolder'];
-                const boundary = '-------314159265358979323846';
-                const delimiter = "\r\n--" + boundary + "\r\n";
-                const close_delim = "\r\n--" + boundary + "--";
-
-                var multipartRequestBody =
-                    delimiter +
-                    'Content-Type: application/json\r\n\r\n' +
-                    JSON.stringify(fileMetadata) +
-                    delimiter +
-                    'Content-Type: ' + media.mimeType + '\r\n\r\n' +
-                    media.body +
-                    close_delim;
-                
-                request = gapi.client.request({
-                    'path': '/upload/drive/v3/files',
-                    'method': 'POST',
-                    'params': {'uploadType': 'multipart'},
-                    'headers': {'Content-Type': 'multipart/related; boundary="' + boundary + "'"},
-                    'body': multipartRequestBody
-                });
-            }
-            const response = await request;
-            if(!driveFileId) {
-                 const file = response.result;
-                 driveFileId = file.id;
-            }
-            document.getElementById('sync-status').textContent = 'All changes saved to Drive.';
-
-        } catch (error) {
-            console.error('Error saving data to Drive:', error);
-            document.getElementById('sync-status').textContent = 'Error saving to Drive.';
-        }
-    }
-    // --- END OF GOOGLE AUTH FUNCTIONS ---
-
-
-    function saveData() { 
-        localStorage.setItem(DB_NAME, JSON.stringify(appData)); 
-        if (isLoggedIn) {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveDataToDrive, 2500); // 2.5 second delay
-        }
-    }
-
+    function saveData() { localStorage.setItem(DB_NAME, JSON.stringify(appData)); }
     function saveSettings() { saveData(); }
 
     function applyTheme() {
@@ -1018,7 +721,7 @@
                 <h3>About (معلومات)</h3>
                 <div class="settings-item">
                     <span>App Version</span>
-                    <span>1.8.0 (Google Sync)</span>
+                    <span>1.6.0</span>
                 </div>
                 <div class="settings-item">
                     <span>Share App</span>
@@ -1066,6 +769,7 @@
         document.body.removeChild(link);
     }
     
+    // ... (rest of the script is the same)
     function showActionModal(type, id) {
         const modal = document.getElementById('action-modal');
         const group = appData.groups.find(g => g.name === appData.activeGroup);
@@ -1107,4 +811,3 @@
 </script>
 </body>
 </html>
-
